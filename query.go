@@ -9,20 +9,20 @@ import (
 	"time"
 
 	json "github.com/json-iterator/go"
-	"github.com/zrb-channel/pyd/config"
-	"github.com/zrb-channel/pyd/schema"
+	config "github.com/zrb-channel/pyd/config"
+	schema "github.com/zrb-channel/pyd/schema"
 	"github.com/zrb-channel/utils"
 	"github.com/zrb-channel/utils/hash"
 )
 
-func Query(ctx context.Context) error {
+func Query(ctx context.Context, conf *schema.Config) error {
 	data := map[string]string{
-		"mall_id":      config.AppID,
+		"mall_id":      conf.AppId,
 		"company_name": "株洲瑞特建材销售有限公司",
 		"tm":           strconv.FormatInt(time.Now().UnixNano()/1e6, 10),
 	}
 
-	data["sign"] = hash.MD5String(data["mall_id"] + data["company_name"] + data["tm"] + config.AppKey)
+	data["sign"] = hash.MD5String(data["mall_id"] + data["company_name"] + data["tm"] + conf.AppKey)
 	resp, err := utils.Request(ctx).
 		SetFormData(data).Post(config.BaseURL + "/loans/open/inputstatus")
 	if err != nil {

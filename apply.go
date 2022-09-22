@@ -3,13 +3,13 @@ package pyd
 import (
 	"context"
 	"errors"
+	config "github.com/zrb-channel/pyd/config"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/zrb-channel/utils"
 
-	"github.com/zrb-channel/pyd/config"
 	"github.com/zrb-channel/pyd/schema"
 	"github.com/zrb-channel/utils/hash"
 
@@ -20,10 +20,10 @@ import (
 	json "github.com/json-iterator/go"
 )
 
-func Create(ctx context.Context, req *schema.CreateRequest) (*schema.CreateResponseData, error) {
+func Apply(ctx context.Context, conf *pyd.Config, req *pyd.ApplyRequest) (*pyd.ApplyResponseData, error) {
 
 	var data = map[string]string{
-		"mall_id":        config.AppID,
+		"mall_id":        conf.AppId,
 		"name":           req.Name,
 		"mobile":         req.Mobile,
 		"idcard":         req.IdCard,
@@ -33,7 +33,7 @@ func Create(ctx context.Context, req *schema.CreateRequest) (*schema.CreateRespo
 		"tm":             strconv.FormatInt(time.Now().UnixNano()/1e6, 10),
 	}
 
-	signStr := data["mall_id"] + data["name"] + data["mobile"] + data["idcard"] + data["company_name"] + data["company_reg_no"] + data["pid"] + data["tm"] + config.AppKey
+	signStr := data["mall_id"] + data["name"] + data["mobile"] + data["idcard"] + data["company_name"] + data["company_reg_no"] + data["pid"] + data["tm"] + conf.AppKey
 	data["sign"] = hash.MD5String(signStr)
 
 	resp, err := utils.Request(ctx).
@@ -52,7 +52,7 @@ func Create(ctx context.Context, req *schema.CreateRequest) (*schema.CreateRespo
 	}
 
 	f := map[string]any{"body": resp.String(), "data": data, "idCardImage": map[string]string{"idcard_img_f": req.IdCardImageF, "idcard_img_b": req.IdCardImageB}}
-	result := &schema.BaseResponse{}
+	result := &pyd.BaseResponse{}
 	if err = json.Unmarshal(resp.Body(), result); err != nil {
 		log.WithError(err).Error("浦逸贷提交失败", zap.Any("data", f))
 		return nil, errors.New("提交失败")
@@ -63,7 +63,7 @@ func Create(ctx context.Context, req *schema.CreateRequest) (*schema.CreateRespo
 		return nil, errors.New(result.Msg)
 	}
 
-	res := &schema.CreateResponseData{}
+	res := &pyd.ApplyResponseData{}
 	if err = json.Unmarshal(result.Data, res); err != nil {
 		log.WithError(err).Error("浦逸贷提交失败", zap.Any("data", f))
 		return nil, errors.New("提交失败")

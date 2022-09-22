@@ -1,4 +1,4 @@
-package schema
+package pyd
 
 import json "github.com/json-iterator/go"
 
