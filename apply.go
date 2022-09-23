@@ -20,8 +20,15 @@ import (
 	json "github.com/json-iterator/go"
 )
 
+// Apply
+// @param ctx
+// @param conf
+// @param req
+// @date 2022-09-24 01:25:39
 func Apply(ctx context.Context, conf *pyd.Config, req *pyd.ApplyRequest) (*pyd.ApplyResponseData, error) {
-
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	var data = map[string]string{
 		"mall_id":        conf.AppId,
 		"name":           req.Name,

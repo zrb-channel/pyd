@@ -15,7 +15,15 @@ import (
 	"github.com/zrb-channel/utils/hash"
 )
 
+// Query
+// @param ctx
+// @param conf
+// @date 2022-09-24 01:25:49
 func Query(ctx context.Context, conf *schema.Config) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	data := map[string]string{
 		"mall_id":      conf.AppId,
 		"company_name": "株洲瑞特建材销售有限公司",
