@@ -3,7 +3,7 @@ package pyd
 import (
 	"context"
 	"errors"
-	"fmt"
+	log "github.com/zrb-channel/utils/logger"
 	"net/http"
 	"strconv"
 	"time"
@@ -19,14 +19,14 @@ import (
 // @param ctx
 // @param conf
 // @date 2022-09-24 01:25:49
-func Query(ctx context.Context, conf *schema.Config) error {
+func Query(ctx context.Context, conf *schema.Config, companyName string) (*schema.QueryResult, error) {
 	if err := ctx.Err(); err != nil {
-		return err
+		return nil, err
 	}
 
 	data := map[string]string{
 		"mall_id":      conf.AppId,
-		"company_name": "株洲瑞特建材销售有限公司",
+		"company_name": companyName,
 		"tm":           strconv.FormatInt(time.Now().UnixNano()/1e6, 10),
 	}
 
@@ -34,39 +34,37 @@ func Query(ctx context.Context, conf *schema.Config) error {
 	resp, err := utils.Request(ctx).
 		SetFormData(data).Post(config.BaseURL + "/loans/open/inputstatus")
 	if err != nil {
-		fmt.Println(err.Error())
-		return err
-	}
-
-	if err != nil {
-		fmt.Println(err.Error())
-		return err
+		log.WithError(err).Error("[浦逸贷]-订单查询请求失败", log.Fields(map[string]any{"order": data}))
+		return nil, err
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		return errors.New(resp.String())
+		log.Error("[浦逸贷]-订单查询，返回statusCode有误", log.Fields(map[string]any{"order": data}))
+		return nil, errors.New(resp.String())
 	}
 
 	result := &schema.BaseResponse{}
 	if err = json.Unmarshal(resp.Body(), result); err != nil {
-		return err
+		log.Error("[浦逸贷]-订单查询，返回数据解析失败", log.Fields(map[string]any{"order": data, "body": resp.String()}))
+		return nil, err
 	}
 
 	res := &schema.QueryResponseData{}
 	if err = json.Unmarshal(result.Data, res); err != nil {
-		return err
+		log.Error("[浦逸贷]-订单查询，返回数据解析失败2", log.Fields(map[string]any{"order": data, "body": resp.String()}))
+		return nil, err
 	}
 
 	if result.Code != http.StatusOK {
-		fmt.Println(result.Msg)
-		return errors.New(result.Msg)
+		log.Error("[浦逸贷]-订单查询，返回数据code有误", log.Fields(map[string]any{"order": data, "body": resp.String(), "result": result}))
+		return nil, errors.New(result.Msg)
 	}
 
 	if res.Status != 1000 {
-		fmt.Println(res.Message)
-		return errors.New(res.Message)
+		log.Error("[浦逸贷]-订单查询，返回数据status有误", log.Fields(map[string]any{"order": data, "body": resp.String(), "result": res}))
+
+		return nil, errors.New(res.Message)
 	}
 
-	fmt.Println(res.String())
-	return nil
+	return &res.Res, nil
 }
